@@ -12,13 +12,13 @@ iris.label = iris$Species # define your label variable for visualisation
 table(iris.label) # Possibility: 3 species, we could assume there would be 3 clusters
 
 
-
 # hierarchical clustering
 # scaling
 
 # very important to scale data because the methodology is sensitive to scale!
 iris_data = iris[1:4]
 iris_data_std = scale(iris_data)
+
 
 # distance metric
 
@@ -38,7 +38,6 @@ iris_dist_minkowski <- dist(iris_data_std, method = "minkowski", p = 3)
 # p converges to infinity -> distance converges to the Maximum distance
 
 
-
 # Hierarchical clustering analysis
 
 set.seed(123)
@@ -54,14 +53,12 @@ hc_out_iris = hclust(iris_dist, method = "ward.D")
 hc_out_iris = hclust(iris_dist, method = "single")
 
 
-
 # Dendogram
 
 plot(hc_out_iris)
 rect.hclust(hc_out_iris, k = 3, border = 2:5)
 # ideally have 3 clusters because we have 3 species. 3 attributes we wanna center around
 # see that here, it's a bottom-appraoch (agglomerative)
-
 
 
 # Silhouhette plot
@@ -84,7 +81,6 @@ plot(1:10, silhouette_scores[1:10], type = "b", pch = 19,
      main = "Silhouette Analysis for Optimal Clusters")
 
 
-
 # visualise the clusters
 
 iris_clusters = cutree(hc_out_iris, k = 3)
@@ -98,7 +94,6 @@ fviz_cluster(list(data = iris_data_std, cluster = iris_clusters))
 # compute a table to see where outliers are because we see some misplacements
 table(iris_clusters, iris$Species)
 # we see it miscategorised a good chunck of versicolors
-
 
 
 # Cophonetic distances 
