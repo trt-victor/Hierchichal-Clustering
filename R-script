@@ -1,0 +1,137 @@
+# title: "Hierarchical clustering"
+# Copy paste in R-markdown script file
+
+iris # existing data set in R
+pacman::p_load(ggplot2, factoextra, cluster, ltm, gridExtra, corrplot, psych) 
+
+
+# Looking to create clusters for the 4 characteristics: sepal length, sepal width, petal length & petal width. Then compare species to these clusters
+
+set.seed(123)
+iris.label = iris$Species # define your label variable for visualisation
+table(iris.label) # Possibility: 3 species, we could assume there would be 3 clusters
+
+
+
+# hierarchical clustering
+# scaling
+
+# very important to scale data because the methodology is sensitive to scale!
+iris_data = iris[1:4]
+iris_data_std = scale(iris_data)
+
+# distance metric
+
+iris_dist = dist(iris_data_std) # computes distance using euclidian
+
+# For other distance methods:
+iris_dist_maximum <- dist(iris_data_std, method = "maximum")
+iris_dist_manhattan <- dist(iris_data_std, method = "manhattan")
+iris_dist_canberra <- dist(iris_data_std, method = "canberra")
+iris_dist_binary <- dist(iris_data_std, method = "binary")
+
+# Minkowski distance requires specifying the expected parameter p 
+iris_dist_minkowski <- dist(iris_data_std, method = "minkowski", p = 3)
+# p determines the "order" of the distance metric and adjusts the sensitivity to differences in dimensions between points
+# p = 1 is equivalent to the Manhattan distance
+# p = 2 is equivalent to the Euclidian distance
+# p converges to infinity -> distance converges to the Maximum distance
+
+
+
+# Hierarchical clustering analysis
+
+set.seed(123)
+
+hc_out_iris = hclust(iris_dist, method = "complete")
+# method = linkage point method
+hc_out_iris
+
+# For other linkage points
+hc_out_iris = hclust(iris_dist, method = "complete")
+hc_out_iris = hclust(iris_dist, method = "average")
+hc_out_iris = hclust(iris_dist, method = "ward.D")
+hc_out_iris = hclust(iris_dist, method = "single")
+
+
+
+# Dendogram
+
+plot(hc_out_iris)
+rect.hclust(hc_out_iris, k = 3, border = 2:5)
+# ideally have 3 clusters because we have 3 species. 3 attributes we wanna center around
+# see that here, it's a bottom-appraoch (agglomerative)
+
+
+
+# Silhouhette plot
+# A value close to 1 is better. If the highest average silhouhette score is highest for another number of clusters than the one chosen, refine your model until the highest average silhouette score is at the number of cluster chosen for analysis.
+# If the score is very low (close to 0), it implies there is maybe no clustering solution that exists.
+
+silhouette_scores <- numeric()
+for (k in 1:10) {  # Test clusters from 2 to 10 (adjust as needed)
+  # Cut the dendrogram at 'k' clusters
+  clusters <- cutree(hc_out_iris, k = 3)
+  
+  # Calculate silhouette scores
+  sil <- silhouette(clusters, iris_dist)
+  silhouette_scores[k] <- mean(sil[, 3])  # Store the average silhouette width for each 'k'
+}
+
+# Step 4: Plot silhouette scores for each number of clusters
+plot(1:10, silhouette_scores[1:10], type = "b", pch = 19,
+     xlab = "Number of Clusters", ylab = "Average Silhouette Score",
+     main = "Silhouette Analysis for Optimal Clusters")
+
+
+
+# visualise the clusters
+
+iris_clusters = cutree(hc_out_iris, k = 3)
+# For each association, there is an associated cluster number
+
+# associate values (1-3) to names of species
+rownames(iris_data_std) = paste(iris$Species, 1:dim(iris)[1], sep = "_")
+
+fviz_cluster(list(data = iris_data_std, cluster = iris_clusters))
+
+# compute a table to see where outliers are because we see some misplacements
+table(iris_clusters, iris$Species)
+# we see it miscategorised a good chunck of versicolors
+
+
+
+# Cophonetic distances 
+# A higher value is preferred
+
+################################################
+# Cophonetic distance with different linkage methods
+h1=hclust(iris_dist,method='average')
+h2=hclust(iris_dist,method='complete')
+h3=hclust(iris_dist,method='ward.D')
+h4=hclust(iris_dist,method='single')
+
+# Cophenetic Distances, for each linkage
+c1=cophenetic(h1)
+c2=cophenetic(h2)
+c3=cophenetic(h3)
+c4=cophenetic(h4)
+
+# Correlations
+cor1 = cor(iris_dist,c1) 
+cor2 = cor(iris_dist,c2) 
+cor3 = cor(iris_dist,c3) 
+cor4 = cor(iris_dist,c4) 
+
+# Dendograms
+par(mfrow=c(2,2))
+plot(h1,main='Average Linkage')
+mtext(paste("Correlation:", round(cor1, 2)), side = 3, line = -6, adj = 0.5, cex = 0.8, col = "blue")
+plot(h2,main='Complete Linkage')
+mtext(paste("Correlation:", round(cor2, 2)), side = 3, line = -6, adj = 0.5, cex = 0.8, col = "blue")
+plot(h3, main = 'Ward Linkage')
+mtext(paste("Correlation:", round(cor3, 2)), side = 3, line = -6, adj = 0.5, cex = 0.8, col = "blue")
+plot(h4, main = 'Single Linkage')
+mtext(paste("Correlation:", round(cor4, 2)), side = 3, line = -6, adj = 0.5, cex = 0.8, col = "blue")
+par(mfrow=c(1,1))
+
